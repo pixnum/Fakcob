@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fakcob - Fake Review Checker</title>
+<link rel="icon" href="https://cdn-icons-png.flaticon.com/512/2910/2910763.png" type="image/png">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,Verdana,sans-serif;}
+body{display:flex;justify-content:center;align-items:flex-start;min-height:100vh;background-color:#e0e0e0;transition:background-color 0.3s,color 0.3s;padding:20px;}
+body.dark{background-color:#1e1e1e;color:#e0e0e0;}
+.frame{position:relative;padding:25px;border-radius:25px;background:#e0e0e0;box-shadow:10px 10px 30px #bebebe,-10px -10px 30px #ffffff;width:95%;max-width:700px;transition:background 0.3s,box-shadow 0.3s;}
+body.dark .frame{background:#1e1e1e;box-shadow:10px 10px 30px #171717,-10px -10px 30px #262626;}
+h1{text-align:center;margin-bottom:15px;}
+.container{display:flex;flex-direction:column;gap:15px;}
+textarea{width:100%;padding:15px;border-radius:15px;border:none;outline:none;resize:none;font-size:16px;box-shadow:inset 8px 8px 16px #bebebe,inset -8px -8px 16px #ffffff;transition:box-shadow 0.3s;}
+body.dark textarea{box-shadow:inset 8px 8px 16px #171717,inset -8px -8px 16px #262626;background-color:#2c2c2c;color:#e0e0e0;}
+button{padding:10px 18px;border-radius:15px;border:none;cursor:pointer;font-size:15px;background:#e0e0e0;box-shadow:8px 8px 16px #bebebe,-8px -8px 16px #ffffff;transition:all 0.3s;margin-right:8px;}
+body.dark button{background:#1e1e1e;box-shadow:8px 8px 16px #171717,-8px -8px 16px #262626;color:#e0e0e0;}
+button:hover{transform:translateY(-2px);}
+.result{padding:12px;border-radius:12px;text-align:center;font-weight:bold;box-shadow:inset 8px 8px 16px #bebebe,inset -8px -8px 16px #ffffff;transition:box-shadow 0.3s;}
+body.dark .result{box-shadow:inset 8px 8px 16px #171717,inset -8px -8px 16px #262626;}
+.progress-container{width:100%;height:22px;border-radius:12px;background:#e0e0e0;box-shadow:inset 6px 6px 12px #bebebe,inset -6px -6px 12px #ffffff;overflow:hidden;}
+body.dark .progress-container{background:#1e1e1e;box-shadow:inset 6px 6px 12px #171717,inset -6px -6px 12px #262626;}
+.progress-bar{height:100%;width:0%;border-radius:12px;transition:width 0.5s,background 0.5s;}
+.highlight{border-radius:3px;padding:0 2px;position:relative;cursor:help;}
+.highlight:hover::after{content:attr(data-tooltip);position:absolute;bottom:125%;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:4px 8px;border-radius:5px;white-space:nowrap;font-size:12px;z-index:10;opacity:1;}
+.highlight::after{opacity:0;pointer-events:none;transition:opacity 0.2s;}
+.output{width:100%;min-height:120px;padding:10px;border-radius:15px;box-shadow:inset 8px 8px 16px #bebebe,inset -8px -8px 16px #ffffff;background:#f0f0f0;overflow-wrap:break-word;}
+body.dark .output{background:#2c2c2c;box-shadow:inset 8px 8px 16px #171717,inset -8px -8px 16px #262626;color:#e0e0e0;}
+.dark-mode-toggle{position:absolute;top:20px;right:20px;padding:10px 15px;border-radius:50px;border:none;cursor:pointer;box-shadow:4px 4px 8px #bebebe,-4px -4px 8px #ffffff;transition:all 0.3s;z-index:5;}
+body.dark .dark-mode-toggle{box-shadow:4px 4px 8px #171717,-4px -4px 8px #262626;color:#e0e0e0;}
+footer{margin-top:20px;text-align:center;font-size:14px;}
+.highlight.orange{background:orange;color:black;}
+.highlight.red{background:red;color:white;}
+.highlight.blue{background:lightblue;color:black;}
+.highlight.purple{background:purple;color:white;}
+.highlight.green{background:limegreen;color:black;}
+.button-group{display:flex;flex-wrap:wrap;gap:10px;}
+.dashboard-controls{margin-bottom:10px; display:flex; gap:10px; flex-wrap:wrap;}
+.dashboard{margin-top:5px;max-height:180px;overflow-y:auto;border-radius:12px;background:#f0f0f0;padding:10px;box-shadow:inset 6px 6px 12px #bebebe,inset -6px -6px 12px #ffffff;}
+body.dark .dashboard{background:#2c2c2c;box-shadow:inset 6px 6px 12px #171717,inset -6px -6px 12px #262626;color:#e0e0e0;}
+.dashboard table{width:100%;border-collapse:collapse;font-size:14px;}
+.dashboard th, .dashboard td{padding:6px;border-bottom:1px solid #ccc;text-align:left;}
+.dashboard th{background:#d0d0d0;}
+body.dark .dashboard th{background:#3c3c3c;}
+@media(max-width:600px){.frame{padding:15px;}textarea,button{font-size:14px;padding:8px;}}
+</style>
+</head>
+<body>
+
+<div class="frame">
+<button class="dark-mode-toggle">🌙</button>
+<h1>Fakcob</h1>
+<div class="container">
+<textarea id="reviewInput" rows="6" placeholder="Paste product review here..."></textarea>
+<div class="button-group">
+<button onclick="checkFake()">Check Review</button>
+<button onclick="clearAll()">Clear</button>
+<button onclick="copyOutput()">Copy Output</button>
+</div>
+<div class="result" id="result">Result will appear here</div>
+<div class="progress-container">
+    <div class="progress-bar" id="progressBar"></div>
+</div>
+<div class="output" id="highlightedOutput"></div>
+
+<div class="dashboard-controls">
+    <button onclick="sortDashboard()">Sort by Fake % ⬆️/⬇️</button>
+    <input type="text" id="filterInput" placeholder="Filter reviews..." oninput="filterDashboard()">
+</div>
+
+<div class="dashboard" id="dashboard">
+<table id="reviewsTable">
+<tr>
+  <th>#</th>
+  <th>Fake %</th>
+  <th>Review Preview</th>
+  <th>Actions</th>
+</tr>
+</table>
+</div>
+
+</div>
+<footer>© Fakcob 2025</footer>
+</div>
+
+<script>
+const toggleButton=document.querySelector('.dark-mode-toggle');
+toggleButton.addEventListener('click',()=>{
+    document.body.classList.toggle('dark');
+    toggleButton.textContent=document.body.classList.contains('dark')?'☀️':'🌙';
+});
+
+let reviewCount = 0;
+let sortAsc = true;
+
+function checkFake(){
+    const review=document.getElementById('reviewInput').value.trim();
+    const resultDiv=document.getElementById('result');
+    const progressBar=document.getElementById('progressBar');
+    const outputDiv=document.getElementById('highlightedOutput');
+    if(review===""){resultDiv.textContent="Please enter a review!";resultDiv.style.color="red";progressBar.style.width="0%";outputDiv.innerHTML="";return;}
+
+    let fakeScore=0;
+    let highlightedText=review;
+
+    // Superlatives
+    const superlatives=["excellent","amazing","best product ever","five stars","highly recommend","perfect","fantastic","love it","outstanding","unbelievable"];
+    superlatives.forEach(word=>{
+        const regex=new RegExp(`\\b${word}\\b`,'gi');
+        if(regex.test(highlightedText)){
+            fakeScore+=2;
+            highlightedText=highlightedText.replace(regex,match=>`<span class="highlight orange" data-tooltip="Exaggerated word">${match}</span>`);
+        }
+    });
+
+    // All caps
+    const allCaps=review.match(/\b[A-Z]{3,}\b/g);
+    if(allCaps){fakeScore+=allCaps.length*1.5;allCaps.forEach(word=>{
+        const regex=new RegExp(`\\b${word}\\b`,'g');
+        highlightedText=highlightedText.replace(regex,`<span class="highlight red" data-tooltip="All caps word">${word}</span>`);
+    });}
+
+    // Repeated words
+    const words=review.split(/\s+/);
+    const wordCounts={};
+    words.forEach(w=>{wordCounts[w]=(wordCounts[w]||0)+1;});
+    for(const w in wordCounts){if(wordCounts[w]>3){fakeScore+=1;const regex=new RegExp(`\\b${w}\\b`,'g');highlightedText=highlightedText.replace(regex,`<span class="highlight blue" data-tooltip="Repeated word">${w}</span>`);}}
+
+    // Excessive punctuation
+    const punctuations=review.match(/[\!\?]{2,}/g);
+    if(punctuations){fakeScore+=punctuations.length*1.5;punctuations.forEach(p=>{
+        const regex=new RegExp(`\\${p}`,'g');
+        highlightedText=highlightedText.replace(regex,`<span class="highlight purple" data-tooltip="Excessive punctuation">${p}</span>`);
+    });}
+
+    // Emojis
+    const emojiRegex=/([\u231A-\u32FF\uD83C-\uDBFF\uDC00-\uDFFF]+)/g;
+    const emojis=review.match(emojiRegex);
+    if(emojis){fakeScore+=emojis.length;emojis.forEach(e=>{
+        const regex=new RegExp(`\\${e}`,'g');
+        highlightedText=highlightedText.replace(regex,`<span class="highlight green" data-tooltip="Emoji detected">${e}</span>`);
+    });}
+
+    // Links / promo keywords
+    const promoKeywords=["buy now","discount","click here","https://","www.","offer"];
+    promoKeywords.forEach(word=>{
+        const regex=new RegExp(`\\b${word}\\b`,'gi');
+        if(regex.test(highlightedText)){
+            fakeScore+=3;
+            highlightedText=highlightedText.replace(regex,match=>`<span class="highlight red" data-tooltip="Promotional word">${match}</span>`);
+        }
+    });
+
+    // Extreme length
+    if(review.length<20 || review.length>500) fakeScore+=1;
+
+    // Calculate fake percentage
+    let fakePercentage=Math.min((fakeScore/25)*100,100);
+    progressBar.style.width=fakePercentage+"%";
+    if(fakePercentage<40){progressBar.style.background="green";}
+    else if(fakePercentage<70){progressBar.style.background="orange";}
+    else{progressBar.style.background="red";}
+
+    if(fakePercentage>50){
+        resultDiv.textContent=`⚠️ This review looks suspicious (${fakePercentage.toFixed(0)}% fake indicators)`;
+        resultDiv.style.color="orange";
+    } else {
+        resultDiv.textContent=`✅ This review seems genuine (${100-fakePercentage.toFixed(0)}% genuine indicators)`;
+        resultDiv.style.color="green";
+    }
+
+    outputDiv.innerHTML=highlightedText;
+
+    // Add to dashboard with Edit & Delete
+    reviewCount++;
+    const table=document.getElementById('reviewsTable');
+    const tr=document.createElement('tr');
+    const preview=review.length>40 ? review.substr(0,40)+"..." : review;
+    tr.setAttribute('data-full', review);
+    tr.innerHTML=`
+      <td>${reviewCount}</td>
+      <td>${fakePercentage.toFixed(0)}%</td>
+      <td>${preview}</td>
+      <td>
+        <button onclick="editReview(this)">Edit</button>
+        <button onclick="deleteReview(this)">Delete</button>
+      </td>
+    `;
+    table.appendChild(tr);
+}
+
+function clearAll(){
+    document.getElementById('reviewInput').value="";
+    document.getElementById('highlightedOutput').innerHTML="";
+    document.getElementById('result').textContent="Result will appear here";
+    document.getElementById('progressBar').style.width="0%";
+}
+
+function copyOutput(){
+    const output=document.getElementById('highlightedOutput').innerText;
+    navigator.clipboard.writeText(output).then(()=>alert("Review copied to clipboard!"));
+}
+
+function deleteReview(btn){
+    const row=btn.parentElement.parentElement;
+    row.remove();
+    const rows=document.querySelectorAll('#reviewsTable tr');
+    for(let i=1;i<rows.length;i++){
+        rows[i].cells[0].innerText=i;
+    }
+    reviewCount=rows.length-1;
+}
+
+function editReview(btn){
+    const row=btn.parentElement.parentElement;
+    const reviewText=row.getAttribute('data-full');
+    document.getElementById('reviewInput').value=reviewText;
+    row.remove();
+    const rows=document.querySelectorAll('#reviewsTable tr');
+    for(let i=1;i<rows.length;i++){
+        rows[i].cells[0].innerText=i;
+    }
+    reviewCount=rows.length-1;
+}
+
+function sortDashboard(){
+    const table=document.getElementById('reviewsTable');
+    const rows=Array.from(table.querySelectorAll('tr')).slice(1);
+    rows.sort((a,b)=>{
+        const aVal=parseFloat(a.cells[1].innerText);
+        const bVal=parseFloat(b.cells[1].innerText);
+        return sortAsc ? aVal-bVal : bVal-aVal;
+    });
+    sortAsc=!sortAsc;
+    rows.forEach(r=>table.appendChild(r));
+    for(let i=0;i<rows.length;i++){
+        rows[i].cells[0].innerText=i+1;
+    }
+    reviewCount=rows.length;
+}
+
+function filterDashboard(){
+    const filter=document.getElementById('filterInput').value.toLowerCase();
+    const table=document.getElementById('reviewsTable');
+    const rows=Array.from(table.querySelectorAll('tr')).slice(1);
+    rows.forEach(r=>{
+        const preview=r.cells[2].innerText.toLowerCase();
+        r.style.display=preview.includes(filter)?'':'none';
+    });
+}
+</script>
+</body>
+</html>
